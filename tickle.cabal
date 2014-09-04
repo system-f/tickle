@@ -7,7 +7,10 @@ maintainer:         Tony Morris
 copyright:          Tony Morris
 synopsis:           A port of @Data.Binary@
 category:           Data
-description:        A port of @Data.Binary@ that tightens up data types and parameterises error messages
+description:
+  <<http://i.imgur.com/Ns5hntl.jpg>>
+  .
+  A port of @Data.Binary@ that tightens up data types and parameterises error messages
 homepage:           https://github.com/tonymorris/tickle
 bug-reports:        https://github.com/tonymorris/tickle/issues
 cabal-version:      >= 1.10
