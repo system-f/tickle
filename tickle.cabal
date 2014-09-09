@@ -4,7 +4,7 @@ license:            BSD3
 license-file:       LICENSE
 author:             Tony Morris <ʇǝu˙sıɹɹoɯʇ@ןןǝʞsɐɥ>
 maintainer:         Tony Morris
-copyright:          Tony Morris
+copyright:          Copyright (C) 2014 NICTA Limited
 synopsis:           A port of @Data.Binary@
 category:           Data
 description:
