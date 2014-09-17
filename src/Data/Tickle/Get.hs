@@ -175,7 +175,7 @@ import System.IO.Unsafe(unsafePerformIO)
 import GHC.Word(Word, Word8, Word16(W16#), Word32(W32#), Word64(W64#))
 import GHC.Base(uncheckedShiftL#, Int(I#))
 #endif
-import Prelude(Num((-), (+)), Float, Integer, ($!), Show, fromIntegral, undefined, seq)
+import Prelude(Num((-), (+)), Float, Double, Integer, ($!), Show, fromIntegral, undefined, seq)
 import System.IO(IO)
 
 -- $setup
@@ -1021,13 +1021,13 @@ float32le =
 {-# INLINE float32le #-}
 
 float64be ::
-  Get () Float
+  Get () Double
 float64be =
   fmap toFloat word64be
 {-# INLINE float64be #-}
 
 float64le ::
-  Get () Float
+  Get () Double
 float64le =
   fmap toFloat word64le
 {-# INLINE float64le #-}
