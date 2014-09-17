@@ -39,6 +39,37 @@ module Data.Tickle.Get(
 , modify
 , readN
 , ensureN
+  -- ** Higher-level parsers
+  -- *** IEEE754 parsers
+, toFloat
+, toFloat16
+, float16be
+, float16le
+, float32be
+, float32le
+, float64be
+, float64le
+  -- *** Integer parsers
+, int8
+, int16be
+, int16le
+, int32be
+, int32le
+, int64be
+, int64le
+, IntegerError
+, integerError
+, _IntegerTagUnexpectedEof
+, _Integer0TagUnexpectedEof
+, _Integer1TagUnexpectedEof
+, _IntegerListError
+, integer
+  -- *** List parsers
+, ListError
+, listError
+, listErrorIso
+, list
+, many
   -- ** Higher-level combinators
 , runAndKeepTrack
 , pushBack
@@ -103,17 +134,17 @@ module Data.Tickle.Get(
 
 import Control.Applicative(Applicative((<*>), pure), (<$>))
 import Control.Category(Category((.), id))
-import Control.Lens.Iso(iso)
+import Control.Lens.Iso(Iso', iso)
 import Control.Lens.Lens(lens)
-import Control.Lens.Prism(prism')
+import Control.Lens.Prism(Prism', prism')
 import Control.Lens.Review((#))
-import Control.Lens.Type(Iso, Prism', Lens', Traversal')
+import Control.Lens.Type(Iso, Lens', Traversal')
 import Control.Monad(Monad((>>=), (>>), return), ap)
 import Data.Bifoldable(Bifoldable(bifoldMap))
 import Data.Bifunctor(Bifunctor(bimap))
 import Data.Bitraversable(Bitraversable(bitraverse))
-import Data.Bits((.|.))
-import Data.Bool(Bool(False, True), (&&), not)
+import Data.Bits((.|.), (.&.), shiftL, shiftR)
+import Data.Bool(Bool(False, True), (&&), not, otherwise)
 import qualified Data.ByteString as B(ByteString, concat, append, length, splitAt, empty, null, break, drop)
 import qualified Data.ByteString.Internal as BI
 import qualified Data.ByteString.Lazy as L(ByteString, toChunks, fromChunks)
@@ -128,8 +159,8 @@ import Data.Functor.Apply(Apply((<.>)))
 import Data.Functor.Alt(Alt((<!>)))
 import qualified Data.Functor.Alt as Al(Alt(some, many))
 import Data.Functor.Bind(Bind((>>-)))
-import Data.Int(Int, Int64)
-import Data.List(reverse)
+import Data.Int(Int, Int8, Int16, Int32, Int64)
+import Data.List(reverse, foldr)
 import Data.Maybe(Maybe(Nothing, Just), maybe, isJust)
 import Data.Monoid(Monoid(mempty))
 import Data.Ord(Ord((>), (>=), (<), (>=)))
@@ -138,12 +169,13 @@ import Data.Tickle.IsolateError(IsolateError, _NegativeSize, _IsolateXFail, _Une
 import Data.Tickle.RunGetResult(RunGetResult, _RunGet, _RunGetFail)
 import Data.Traversable(Traversable(traverse))
 import Data.Tuple(uncurry)
-import Foreign(Ptr, castPtr, Storable(peek), sizeOf)
+import Foreign(Ptr, castPtr, Storable(peek), sizeOf, alloca, poke)
+import System.IO.Unsafe(unsafePerformIO)
 #if defined(__GLASGOW_HASKELL__) && !defined(__HADDOCK__)
 import GHC.Word(Word, Word8, Word16(W16#), Word32(W32#), Word64(W64#))
 import GHC.Base(uncheckedShiftL#, Int(I#))
 #endif
-import Prelude(Num((-), (+)), ($!), Show, fromIntegral, undefined)
+import Prelude(Num((-), (+)), Float, Integer, ($!), Show, fromIntegral, undefined, seq)
 import System.IO(IO)
 
 -- $setup
@@ -902,6 +934,266 @@ ensureN !m =
            let Get g = go m
            in g i k)
 {-# INLINE ensureN #-}
+
+toFloat ::
+  (Storable w, Storable f) =>
+  w
+  -> f
+toFloat w =
+  unsafePerformIO (alloca (\buf ->
+    do poke (castPtr buf) w
+       peek buf))
+{-# INLINE toFloat #-}
+
+toFloat16 ::
+  Word16
+  -> Float
+toFloat16 word16 = 
+  let sign16 =
+        word16 .&. 0x8000
+      exp16 =
+        word16 .&. 0x7C00
+      frac16 =
+        word16 .&. 0x3FF
+      sign32 =
+        if sign16 > 0
+          then
+            0x80000000 -- -0.0
+            
+          else
+            0
+      word32
+        :: Word32
+      word32 | word16 .&. 0x7FFF == 0 =
+        0
+             | exp16 == 0x7C00 =
+        special
+             | otherwise =
+        shiftL exp32 23 .|. shiftL frac32 13
+      special =
+        if frac16 == 0
+          -- Infinity
+          then 0x7F800000
+          
+          -- NaN; signals are maintained in lower 10 bits
+          else 0x7FC00000 .|. fromIntegral frac16
+      (exp32, frac32) =
+        if exp16 > 0
+          then normalised
+          else denormalised
+      normalised =
+        let exp = (fromIntegral exp16 `shiftR` 10) - 15 + 127
+            frac = fromIntegral frac16
+        in (exp, frac)
+      denormalised =
+        let exp = (fromIntegral exp16 `shiftR` 10) - 15 + 127 - e
+            (e, frac ) = 
+              let step acc x = if x .&. 0x400 == 0
+                    then step (acc + 1) (shiftL x 1)
+                    else (acc, fromIntegral x .&. 0x3FF)
+              in step 0 (shiftL frac16 1) 
+        in (exp, frac)
+  in toFloat (sign32 .|. word32) 
+{-# INLINE toFloat16 #-}
+
+float16be ::
+  Get () Float
+float16be =
+  fmap toFloat16 word16be
+{-# INLINE float16be #-}
+
+float16le ::
+  Get () Float
+float16le =
+  fmap toFloat16 word16le
+{-# INLINE float16le #-}
+
+float32be ::
+  Get () Float
+float32be =
+  fmap toFloat word32be
+{-# INLINE float32be #-}
+
+float32le ::
+  Get () Float
+float32le =
+  fmap toFloat word32le
+{-# INLINE float32le #-}
+
+float64be ::
+  Get () Float
+float64be =
+  fmap toFloat word64be
+{-# INLINE float64be #-}
+
+float64le ::
+  Get () Float
+float64le =
+  fmap toFloat word64le
+{-# INLINE float64le #-}
+
+int8 ::
+  Get () Int8
+int8 =
+  fmap fromIntegral word8
+{-# INLINE int8 #-}
+
+int16be ::
+  Get () Int16
+int16be =
+  fmap fromIntegral word16be
+{-# INLINE int16be #-}
+
+int16le ::
+  Get () Int16
+int16le =
+  fmap fromIntegral word16le
+{-# INLINE int16le #-}
+
+int32be ::
+  Get () Int32
+int32be =
+  fmap fromIntegral word32be
+{-# INLINE int32be #-}
+
+int32le ::
+  Get () Int32
+int32le =
+  fmap fromIntegral word32le
+{-# INLINE int32le #-}
+
+int64be ::
+  Get () Int64
+int64be =
+  fmap fromIntegral word64be
+{-# INLINE int64be #-}
+
+int64le ::
+  Get () Int64
+int64le =
+  fmap fromIntegral word64le
+{-# INLINE int64le #-}
+
+data IntegerError =
+  IntegerTagUnexpectedEof
+  | Integer0TagUnexpectedEof Word8
+  | Integer1TagUnexpectedEof 
+  | IntegerListError ListError
+  deriving (Eq, Ord, Show)
+
+integerError :: 
+  a
+  -> (Word8 -> a)
+  -> a
+  -> (ListError -> a)
+  -> IntegerError
+  -> a
+integerError u _ _ _ IntegerTagUnexpectedEof =
+  u
+integerError _ u _ _ (Integer0TagUnexpectedEof w) =
+  u w
+integerError _ _ u _ Integer1TagUnexpectedEof =
+  u
+integerError _ _ _ u (IntegerListError e) =
+  u e
+
+_IntegerTagUnexpectedEof ::
+  Prism' IntegerError ()
+_IntegerTagUnexpectedEof =
+  prism'
+    (\() -> IntegerTagUnexpectedEof)
+    (\x -> case x of
+             IntegerTagUnexpectedEof ->
+               Just ()
+             _ ->
+               Nothing)
+
+_Integer0TagUnexpectedEof ::
+  Prism' IntegerError Word8
+_Integer0TagUnexpectedEof =
+  prism'
+    Integer0TagUnexpectedEof
+    (\x -> case x of
+             Integer0TagUnexpectedEof w ->
+               Just w
+             _ ->
+               Nothing)
+
+_Integer1TagUnexpectedEof ::
+  Prism' IntegerError ()
+_Integer1TagUnexpectedEof =
+  prism'
+    (\() -> Integer1TagUnexpectedEof)
+    (\x -> case x of
+             Integer1TagUnexpectedEof ->
+               Just ()
+             _ ->
+               Nothing)
+
+_IntegerListError ::
+  Prism' IntegerError ListError
+_IntegerListError =
+  prism'
+    IntegerListError
+    (\x -> case x of
+             IntegerListError e ->
+               Just e
+             _ ->
+               Nothing)
+
+integer ::
+  Get IntegerError Integer
+integer =
+  do t <- IntegerTagUnexpectedEof !- word8
+     case t of
+       0 ->
+         Integer0TagUnexpectedEof t !- fmap fromIntegral int32be
+       _ -> 
+         do s <- Integer1TagUnexpectedEof !- word8
+            y <- IntegerListError !!- list word8
+            let v = foldr (\b a -> a `shiftL` 8 .|. fromIntegral b) 0 y
+            return $! if s == (1 :: Word8) then v else - v
+
+data ListError =
+  ListUnexpectedEof
+  | ListTagError
+  deriving (Eq, Ord, Show)
+
+listError ::
+  a
+  -> a
+  -> ListError
+  -> a
+listError u _ ListUnexpectedEof =
+  u
+listError _ e ListTagError =
+  e
+
+listErrorIso ::
+  Iso' Bool ListError
+listErrorIso =
+  iso
+    (\p -> if p then ListUnexpectedEof else ListTagError)
+    (== ListUnexpectedEof)
+
+list ::
+  Get e a
+  -> Get ListError [a]
+list q =
+  do n <- ListTagError !- int64be
+     ListUnexpectedEof !- many q n
+
+many ::
+  Get e a
+  -> Int64
+  -> Get e [a]
+many g n =
+  let go x 0 =
+        return $! reverse x
+      go x i =
+        do a <- g
+           x `seq` go (a:x) (i - 1)
+  in go [] n
 
 unsafeReadN ::
   Int 

@@ -1,3 +1,9 @@
+0.0.3
+
+* IEEE754 parsers from data-binary-ieee754
+* Integer parsers
+* List parsers
+
 0.0.2
 
 * Add aliases for `runGet`
