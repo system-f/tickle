@@ -13,21 +13,21 @@ module Data.Tickle.Get(
   -- * Get data type
   Get
   -- ** Primitive parsers
-, getLazyByteString
-, getLazyByteStringNul
-, getRemainingLazyByteString
-, getPtr
-, getWord8
-, getWord16be
-, getWord16le
-, getWord32be
-, getWord32le
-, getWord64be
-, getWord64le
-, getWordhost
-, getWord16host
-, getWord32host 
-, getWord64host
+, lazyByteString
+, lazyByteStringNul
+, remainingLazyByteString
+, ptr
+, word8
+, word16be
+, word16le
+, word32be
+, word32le
+, word64be
+, word64le
+, wordhost
+, word16host
+, word32host 
+, word64host
 , failGet
 , constant
 , bytesRead
@@ -180,10 +180,10 @@ bimapG f g (Get z) =
 
 -- | Map on the error and result of a @Get@ decoder.
 --
--- >>> runGet (bimap (const True) (\x -> x + x) getWord8) (BLC.pack "")
+-- >>> runGet (bimap (const True) (\x -> x + x) word8) (BLC.pack "")
 -- RunGetFail 0 True
 --
--- >>> runGet (bimap (const True) (\x -> x + x) getWord8) (BLC.pack "abc")
+-- >>> runGet (bimap (const True) (\x -> x + x) word8) (BLC.pack "abc")
 -- RunGet 194
 instance Bifunctor Get where
   bimap =
@@ -199,10 +199,10 @@ fmapG =
 
 -- | Map on the result of a @Get@ decoder.
 --
--- >>> runGet (fmap (\x -> x + x) getWord8) (BLC.pack "")
+-- >>> runGet (fmap (\x -> x + x) word8) (BLC.pack "")
 -- RunGetFail 0 ()
 --
--- >>> runGet (fmap (\x -> x + x) getWord8) (BLC.pack "abc")
+-- >>> runGet (fmap (\x -> x + x) word8) (BLC.pack "abc")
 -- RunGet 194
 instance Functor (Get e) where
   fmap =
@@ -210,16 +210,16 @@ instance Functor (Get e) where
 
 -- | Apply a function on the @Get@ decoder result.
 --
--- >>> runGet (fmap (+) getWord8 <.> getWord8) (BLC.pack "")
+-- >>> runGet (fmap (+) word8 <.> word8) (BLC.pack "")
 -- RunGetFail 0 ()
 --
--- >>> runGet (fmap (+) getWord8 <.> getWord8) (BLC.pack "a")
+-- >>> runGet (fmap (+) word8 <.> word8) (BLC.pack "a")
 -- RunGetFail 1 ()
 --
--- >>> runGet (fmap (+) getWord8 <.> getWord8) (BLC.pack "ab")
+-- >>> runGet (fmap (+) word8 <.> word8) (BLC.pack "ab")
 -- RunGet 195
 --
--- >>> runGet (fmap (+) getWord8 <.> getWord8) (BLC.pack "abc")
+-- >>> runGet (fmap (+) word8 <.> word8) (BLC.pack "abc")
 -- RunGet 195
 instance Apply (Get e) where
   (<.>) =
@@ -237,16 +237,16 @@ apG d e =
 
 -- | Apply a function on the @Get@ decoder result.
 --
--- >>> runGet (fmap (+) getWord8 <*> getWord8) (BLC.pack "")
+-- >>> runGet (fmap (+) word8 <*> word8) (BLC.pack "")
 -- RunGetFail 0 ()
 --
--- >>> runGet (fmap (+) getWord8 <*> getWord8) (BLC.pack "a")
+-- >>> runGet (fmap (+) word8 <*> word8) (BLC.pack "a")
 -- RunGetFail 1 ()
 --
--- >>> runGet (fmap (+) getWord8 <*> getWord8) (BLC.pack "ab")
+-- >>> runGet (fmap (+) word8 <*> word8) (BLC.pack "ab")
 -- RunGet 195
 --
--- >>> runGet (fmap (+) getWord8 <*> getWord8) (BLC.pack "abc")
+-- >>> runGet (fmap (+) word8 <*> word8) (BLC.pack "abc")
 -- RunGet 195
 --
 -- >>> runGet (pure 7 :: Get () Int) (BLC.pack "abc")
@@ -263,16 +263,16 @@ instance Applicative (Get e) where
 
 -- | Sequence an action through the @Get@ decoder.
 --
--- >>> runGet (getWord8 >>- \c1 -> fmap (\c2 -> c1 + c2) getWord8) (BLC.pack "")
+-- >>> runGet (word8 >>- \c1 -> fmap (\c2 -> c1 + c2) word8) (BLC.pack "")
 -- RunGetFail 0 ()
 --
--- >>> runGet (getWord8 >>- \c1 -> fmap (\c2 -> c1 + c2) getWord8) (BLC.pack "a")
+-- >>> runGet (word8 >>- \c1 -> fmap (\c2 -> c1 + c2) word8) (BLC.pack "a")
 -- RunGetFail 1 ()
 --
--- >>> runGet (getWord8 >>- \c1 -> fmap (\c2 -> c1 + c2) getWord8) (BLC.pack "ab")
+-- >>> runGet (word8 >>- \c1 -> fmap (\c2 -> c1 + c2) word8) (BLC.pack "ab")
 -- RunGet 195
 --
--- >>> runGet (getWord8 >>- \c1 -> fmap (\c2 -> c1 + c2) getWord8) (BLC.pack "abc")
+-- >>> runGet (word8 >>- \c1 -> fmap (\c2 -> c1 + c2) word8) (BLC.pack "abc")
 -- RunGet 195
 instance Bind (Get e) where
   (>>-) =
@@ -302,16 +302,16 @@ Get k `bindG` f =
 --
 -- prop> runGet (return x :: Get () Int) (BLC.pack "abc") == _RunGet # x
 --
--- >>> runGet (getWord8 >>= \c1 -> getWord8 >>= \c2 -> return (c1 + c2)) (BLC.pack "")
+-- >>> runGet (word8 >>= \c1 -> word8 >>= \c2 -> return (c1 + c2)) (BLC.pack "")
 -- RunGetFail 0 ()
 --
--- >>> runGet (getWord8 >>= \c1 -> getWord8 >>= \c2 -> return (c1 + c2)) (BLC.pack "a")
+-- >>> runGet (word8 >>= \c1 -> word8 >>= \c2 -> return (c1 + c2)) (BLC.pack "a")
 -- RunGetFail 1 ()
 --
--- >>> runGet (getWord8 >>= \c1 -> getWord8 >>= \c2 -> return (c1 + c2)) (BLC.pack "ab")
+-- >>> runGet (word8 >>= \c1 -> word8 >>= \c2 -> return (c1 + c2)) (BLC.pack "ab")
 -- RunGet 195
 --
--- >>> runGet (getWord8 >>= \c1 -> getWord8 >>= \c2 -> return (c1 + c2)) (BLC.pack "abc")
+-- >>> runGet (word8 >>= \c1 -> word8 >>= \c2 -> return (c1 + c2)) (BLC.pack "abc")
 -- RunGet 195
 instance Monad (Get e) where
   return =
@@ -321,34 +321,34 @@ instance Monad (Get e) where
 
 -- | Pick between two @Get@ decoders, finding the first to not fail.
 --
--- >>> runGet ((+1) <$> getWord8 <!> subtract 1 <$> getWord8) (BLC.pack "")
+-- >>> runGet ((+1) <$> word8 <!> subtract 1 <$> word8) (BLC.pack "")
 -- RunGetFail 0 ()
 --
--- >>> runGet ((+1) <$> getWord8 <!> subtract 1 <$> getWord8) (BLC.pack "abc")
+-- >>> runGet ((+1) <$> word8 <!> subtract 1 <$> word8) (BLC.pack "abc")
 -- RunGet 98
 --
--- >>> runGet (getWord8 <!> failGet ()) (BLC.pack "")
+-- >>> runGet (word8 <!> failGet ()) (BLC.pack "")
 -- RunGetFail 0 ()
 --
--- >>> runGet (getWord8 <!> failGet ()) (BLC.pack "abc")
+-- >>> runGet (word8 <!> failGet ()) (BLC.pack "abc")
 -- RunGet 97
 --
--- >>> runGet (Al.some getWord8) (BLC.pack "")
+-- >>> runGet (Al.some word8) (BLC.pack "")
 -- RunGetFail 0 ()
 --
--- >>> runGet (Al.some getWord8) (BLC.pack "a")
+-- >>> runGet (Al.some word8) (BLC.pack "a")
 -- RunGet [97]
 --
--- >>> runGet (Al.some getWord8) (BLC.pack "abc")
+-- >>> runGet (Al.some word8) (BLC.pack "abc")
 -- RunGet [97,98,99]
 --
--- >>> runGet (Al.many getWord8) (BLC.pack "")
+-- >>> runGet (Al.many word8) (BLC.pack "")
 -- RunGet []
 --
--- >>> runGet (Al.many getWord8) (BLC.pack "a")
+-- >>> runGet (Al.many word8) (BLC.pack "a")
 -- RunGet [97]
 --
--- >>> runGet (Al.many getWord8) (BLC.pack "abc")
+-- >>> runGet (Al.many word8) (BLC.pack "abc")
 -- RunGet [97,98,99]
 instance Alt (Get e) where
   f <!> g = 
@@ -364,16 +364,16 @@ instance Alt (Get e) where
   
 -- | Pick between two @Get@ decoders, finding the first to not fail.
 --
--- >>> runGet (((+1) <$> getWord8) <> (subtract 1 <$> getWord8)) (BLC.pack "")
+-- >>> runGet (((+1) <$> word8) <> (subtract 1 <$> word8)) (BLC.pack "")
 -- RunGetFail 0 ()
 --
--- >>> runGet (((+1) <$> getWord8) <> (subtract 1 <$> getWord8)) (BLC.pack "abc")
+-- >>> runGet (((+1) <$> word8) <> (subtract 1 <$> word8)) (BLC.pack "abc")
 -- RunGet 98
 --
--- >>> runGet (getWord8 <> failGet ()) (BLC.pack "")
+-- >>> runGet (word8 <> failGet ()) (BLC.pack "")
 -- RunGetFail 0 ()
 --
--- >>> runGet (getWord8 <> failGet ()) (BLC.pack "abc")
+-- >>> runGet (word8 <> failGet ()) (BLC.pack "abc")
 -- RunGet 97
 instance Semigroup (Get e a) where
   (<>) =
@@ -399,10 +399,10 @@ constant d =
 
 -- | Run a @Get@ decoder, but keep a track of the input that ran it to completion.
 --
--- >>> runGet (runAndKeepTrack getWord8 :: Get () (CompletedXDecoder () Word8, [BC.ByteString])) (BLC.pack "")
+-- >>> runGet (runAndKeepTrack word8 :: Get () (CompletedXDecoder () Word8, [BC.ByteString])) (BLC.pack "")
 -- RunGet (CompletedFail "" (),[])
 --
--- >>> runGet (runAndKeepTrack getWord8 :: Get () (CompletedXDecoder () Word8, [BC.ByteString])) (BLC.pack "abc")
+-- >>> runGet (runAndKeepTrack word8 :: Get () (CompletedXDecoder () Word8, [BC.ByteString])) (BLC.pack "abc")
 -- RunGet (CompletedDone "bc" 97,["abc"])
 runAndKeepTrack ::
   Get e a
@@ -499,7 +499,7 @@ prompt b d f =
 -- >>> runGet (bytesRead :: Get () Int64) (BLC.pack "abc")
 -- RunGet 0
 --
--- >>> runGet (getWord8 >> getWord16be >> getWord32le >> bytesRead) (BLC.pack "abcdefghijk")
+-- >>> runGet (word8 >> word16be >> word32le >> bytesRead) (BLC.pack "abcdefghijk")
 -- RunGet 7
 bytesRead ::
   Get e Int64
@@ -508,22 +508,22 @@ bytesRead =
 
 -- |
 --
--- >>> runGet (isolate 1 getWord8) (BLC.pack "ab")
+-- >>> runGet (isolate 1 word8) (BLC.pack "ab")
 -- RunGet 97
 --
--- >>> runGet (isolate 1 getWord8) (BLC.pack "abcde")
+-- >>> runGet (isolate 1 word8) (BLC.pack "abcde")
 -- RunGet 97
 --
--- >>> runGet (isolate 2 getWord16le) (BLC.pack "abcde")
+-- >>> runGet (isolate 2 word16le) (BLC.pack "abcde")
 -- RunGet 25185
 --
--- >>> runGet (isolate 1 getWord16le) (BLC.pack "abcde")
+-- >>> runGet (isolate 1 word16le) (BLC.pack "abcde")
 -- RunGetFail 0 (IsolateXFail ())
 --
--- >>> runGet (isolate (-3) getWord16le) (BLC.pack "abcde")
+-- >>> runGet (isolate (-3) word16le) (BLC.pack "abcde")
 -- RunGetFail 0 NegativeSize
 --
--- >>> runGet (isolate 3 getWord16le) (BLC.pack "abcde")
+-- >>> runGet (isolate 3 word16le) (BLC.pack "abcde")
 -- RunGetFail 2 (UnexpectedConsumed 2 3)
 isolate ::
   Int
@@ -581,13 +581,13 @@ demandInput =
 
 -- |
 --
--- >>> runGet (getWord8 >>= \c -> skip 2 >> getWord8 >>= \d -> return (c,d)) (BLC.pack "")
+-- >>> runGet (word8 >>= \c -> skip 2 >> word8 >>= \d -> return (c,d)) (BLC.pack "")
 -- RunGetFail 0 ()
 --
--- >>> runGet (getWord8 >>= \c -> skip 2 >> getWord8 >>= \d -> return (c,d)) (BLC.pack "abcdefghi")
+-- >>> runGet (word8 >>= \c -> skip 2 >> word8 >>= \d -> return (c,d)) (BLC.pack "abcdefghi")
 -- RunGet (97,100)
 --
--- >>> runGet (getWord8 >>= \c -> skip 2 >> getWord8 >>= \d -> return (c,d)) (BLC.pack "abc")
+-- >>> runGet (word8 >>= \c -> skip 2 >> word8 >>= \d -> return (c,d)) (BLC.pack "abc")
 -- RunGetFail 3 ()
 skip ::
   Int
@@ -604,13 +604,13 @@ skip n =
 -- >>> runGet isNotEmpty (BLC.pack "abc")
 -- RunGet True
 --
--- >>> runGet (isNotEmpty >>= \p -> getWord8 >>= \w -> return (w, p)) (BLC.pack "abc")
+-- >>> runGet (isNotEmpty >>= \p -> word8 >>= \w -> return (w, p)) (BLC.pack "abc")
 -- RunGet (97,True)
 --
--- >>> runGet (isNotEmpty >>= \p -> getWord8 >>= \w -> return (w, p)) (BLC.pack "")
+-- >>> runGet (isNotEmpty >>= \p -> word8 >>= \w -> return (w, p)) (BLC.pack "")
 -- RunGetFail 0 ()
 --
--- >>> runGet (isNotEmpty >>= \p -> getWord8 >>= \w -> return (w, p)) (BLC.pack "a")
+-- >>> runGet (isNotEmpty >>= \p -> word8 >>= \w -> return (w, p)) (BLC.pack "a")
 -- RunGet (97,True)
 isNotEmpty ::
   Get e Bool
@@ -625,13 +625,13 @@ isNotEmpty =
 -- >>> runGet isEmpty (BLC.pack "abc")
 -- RunGet False
 --
--- >>> runGet (isEmpty >>= \p -> getWord8 >>= \w -> return (w, p)) (BLC.pack "abc")
+-- >>> runGet (isEmpty >>= \p -> word8 >>= \w -> return (w, p)) (BLC.pack "abc")
 -- RunGet (97,False)
 --
--- >>> runGet (isEmpty >>= \p -> getWord8 >>= \w -> return (w, p)) (BLC.pack "")
+-- >>> runGet (isEmpty >>= \p -> word8 >>= \w -> return (w, p)) (BLC.pack "")
 -- RunGetFail 0 ()
 --
--- >>> runGet (isEmpty >>= \p -> getWord8 >>= \w -> return (w, p)) (BLC.pack "a")
+-- >>> runGet (isEmpty >>= \p -> word8 >>= \w -> return (w, p)) (BLC.pack "a")
 -- RunGet (97,False)
 isEmpty ::
   Get e Bool
@@ -645,13 +645,13 @@ isEmpty =
 
 -- |
 --
--- >>> runGet (lookAhead getWord8) (BLC.pack "")
+-- >>> runGet (lookAhead word8) (BLC.pack "")
 -- RunGetFail 0 ()
 --
--- >>> runGet (lookAhead getWord8) (BLC.pack "abc")
+-- >>> runGet (lookAhead word8) (BLC.pack "abc")
 -- RunGet 97
 --
--- >>> runGet (lookAhead getWord8) (BLC.pack "a")
+-- >>> runGet (lookAhead word8) (BLC.pack "a")
 -- RunGet 97
 lookAhead ::
   Get e a
@@ -666,13 +666,13 @@ lookAhead g =
 
 -- |
 --
--- >>> runGet (lookAheadM (getWord8 >>= \w -> return (if even w then Just (w + 5) else Nothing))) (BLC.pack "abc")
+-- >>> runGet (lookAheadM (word8 >>= \w -> return (if even w then Just (w + 5) else Nothing))) (BLC.pack "abc")
 -- RunGet Nothing
 --
--- >>> runGet (lookAheadM (getWord8 >>= \w -> return (if even w then Just (w + 5) else Nothing))) (BLC.pack "bc")
+-- >>> runGet (lookAheadM (word8 >>= \w -> return (if even w then Just (w + 5) else Nothing))) (BLC.pack "bc")
 -- RunGet (Just 103)
 --
--- >>> runGet (lookAheadM (getWord8 >>= \w -> return (if even w then Just (w + 5) else Nothing))) (BLC.pack "")
+-- >>> runGet (lookAheadM (word8 >>= \w -> return (if even w then Just (w + 5) else Nothing))) (BLC.pack "")
 -- RunGetFail 0 ()
 lookAheadM ::
   Get e (Maybe a)
@@ -683,13 +683,13 @@ lookAheadM g =
 
 -- |
 --
--- >>> runGet (lookAheadE (getWord8 >>= \w -> return (if even w then Left (w + 5) else Right (w - 4)))) (BLC.pack "abc")
+-- >>> runGet (lookAheadE (word8 >>= \w -> return (if even w then Left (w + 5) else Right (w - 4)))) (BLC.pack "abc")
 -- RunGet (Right 93)
 --
--- >>> runGet (lookAheadE (getWord8 >>= \w -> return (if even w then Left (w + 5) else Right (w - 4)))) (BLC.pack "bc")
+-- >>> runGet (lookAheadE (word8 >>= \w -> return (if even w then Left (w + 5) else Right (w - 4)))) (BLC.pack "bc")
 -- RunGet (Left 103)
 --
--- >>> runGet (lookAheadE (getWord8 >>= \w -> return (if even w then Left (w + 5) else Right (w - 4)))) (BLC.pack "")
+-- >>> runGet (lookAheadE (word8 >>= \w -> return (if even w then Left (w + 5) else Right (w - 4)))) (BLC.pack "")
 -- RunGetFail 0 ()
 lookAheadE ::
   Get e (Either a b)
@@ -706,10 +706,10 @@ lookAheadE g =
 
 -- |
 --
--- >>> runGet ([(), ()] !+ (setLabel [] getWord8)) (BLC.pack "")
+-- >>> runGet ([(), ()] !+ (setLabel [] word8)) (BLC.pack "")
 -- RunGetFail 0 [(),()]
 --
--- >>> runGet ([(), ()] !+ (setLabel [] getWord8)) (BLC.pack "abc")
+-- >>> runGet ([(), ()] !+ (setLabel [] word8)) (BLC.pack "abc")
 -- RunGet 97
 (!+) ::
   Semigroup e =>
@@ -723,10 +723,10 @@ infixl 3 !+
 
 -- |
 --
--- >>> runGet ([(), ()] `addLabel` (setLabel [] getWord8)) (BLC.pack "")
+-- >>> runGet ([(), ()] `addLabel` (setLabel [] word8)) (BLC.pack "")
 -- RunGetFail 0 [(),()]
 --
--- >>> runGet ([(), ()] `addLabel` (setLabel [] getWord8)) (BLC.pack "abc")
+-- >>> runGet ([(), ()] `addLabel` (setLabel [] word8)) (BLC.pack "abc")
 -- RunGet 97
 addLabel ::
   Semigroup e =>
@@ -738,10 +738,10 @@ addLabel m =
 
 -- |
 --
--- >>> runGet ("error" !- getWord8) (BLC.pack "")
+-- >>> runGet ("error" !- word8) (BLC.pack "")
 -- RunGetFail 0 "error"
 --
--- >>> runGet ("error" !- getWord8) (BLC.pack "abc")
+-- >>> runGet ("error" !- word8) (BLC.pack "abc")
 -- RunGet 97
 (!-) ::
   e
@@ -754,10 +754,10 @@ infixl 3 !-
 
 -- |
 --
--- >>> runGet ("error" `setLabel` getWord8) (BLC.pack "")
+-- >>> runGet ("error" `setLabel` word8) (BLC.pack "")
 -- RunGetFail 0 "error"
 --
--- >>> runGet ("error" `setLabel` getWord8) (BLC.pack "abc")
+-- >>> runGet ("error" `setLabel` word8) (BLC.pack "abc")
 -- RunGet 97
 setLabel ::
   e
@@ -768,10 +768,10 @@ setLabel =
 
 -- |
 --
--- >>> runGet (reverse !!- setLabel "error" getWord8) (BLC.pack "")
+-- >>> runGet (reverse !!- setLabel "error" word8) (BLC.pack "")
 -- RunGetFail 0 "rorre"
 --
--- >>> runGet (reverse !!- setLabel "error" getWord8) (BLC.pack "abc")
+-- >>> runGet (reverse !!- setLabel "error" word8) (BLC.pack "abc")
 -- RunGet 97
 (!!-) ::
   (d -> e)
@@ -784,10 +784,10 @@ infixl 3 !!-
 
 -- |
 --
--- >>> runGet (reverse `modifyLabel` setLabel "error" getWord8) (BLC.pack "")
+-- >>> runGet (reverse `modifyLabel` setLabel "error" word8) (BLC.pack "")
 -- RunGetFail 0 "rorre"
 --
--- >>> runGet (reverse `modifyLabel` setLabel "error" getWord8) (BLC.pack "abc")
+-- >>> runGet (reverse `modifyLabel` setLabel "error" word8) (BLC.pack "abc")
 -- RunGet 97
 modifyLabel ::
   (d -> e)
@@ -1093,7 +1093,7 @@ dropHeadChunk lbs =
 
 -- | An alias for @runGet@.
 --
--- >>> (getWord8 >>= \c1 -> getWord8 >>= \c2 -> return (c1 + c2)) .>> BLC.pack "abc"
+-- >>> (word8 >>= \c1 -> word8 >>= \c2 -> return (c1 + c2)) .>> BLC.pack "abc"
 -- RunGet 195
 (.>>) ::
   Get e a
@@ -1106,7 +1106,7 @@ infixl 2 .>>
 
 -- | An alias for @runGet@ with the arguments flipped.
 --
--- >>> BLC.pack "abc" <<. (getWord8 >>= \c1 -> getWord8 >>= \c2 -> return (c1 + c2))
+-- >>> BLC.pack "abc" <<. (word8 >>= \c1 -> word8 >>= \c2 -> return (c1 + c2))
 -- RunGet 195
 (<<.) ::
   L.ByteString
@@ -1169,18 +1169,18 @@ pushEndOfInput r =
 
 -- |
 --
--- >>> runGet (getLazyByteString 5) (BLC.pack "")
+-- >>> runGet (lazyByteString 5) (BLC.pack "")
 -- RunGetFail 0 ()
 --
--- >>> runGet (getLazyByteString 5) (BLC.pack "abc")
+-- >>> runGet (lazyByteString 5) (BLC.pack "abc")
 -- RunGetFail 3 ()
 --
--- >>> runGet (getLazyByteString 5) (BLC.pack "abcdefg")
+-- >>> runGet (lazyByteString 5) (BLC.pack "abcdefg")
 -- RunGet "abcde"
-getLazyByteString ::
+lazyByteString ::
   Int64
   -> Get () L.ByteString
-getLazyByteString =
+lazyByteString =
   let consume n s =
         if fromIntegral (B.length s) >= n
           then
@@ -1201,20 +1201,20 @@ getLazyByteString =
 
 -- |
 --
--- >>> runGet getLazyByteStringNul (BLC.pack "")
+-- >>> runGet lazyByteStringNul (BLC.pack "")
 -- RunGetFail 0 ()
 --
--- >>> runGet getLazyByteStringNul (BLC.pack "abc")
+-- >>> runGet lazyByteStringNul (BLC.pack "abc")
 -- RunGetFail 3 ()
 --
--- >>> runGet getLazyByteStringNul (BLC.pack "abc\0")
+-- >>> runGet lazyByteStringNul (BLC.pack "abc\0")
 -- RunGet "abc"
 --
--- >>> runGet getLazyByteStringNul (BLC.pack "abc\0def")
+-- >>> runGet lazyByteStringNul (BLC.pack "abc\0def")
 -- RunGet "abc"
-getLazyByteStringNul ::
+lazyByteStringNul ::
   Get () L.ByteString
-getLazyByteStringNul =
+lazyByteStringNul =
   let findNull s =
         case B.break (==0) s of
           (w, r) ->
@@ -1237,14 +1237,14 @@ getLazyByteStringNul =
 
 -- |
 --
--- >>> runGet getRemainingLazyByteString  (BLC.pack "")
+-- >>> runGet remainingLazyByteString  (BLC.pack "")
 -- RunGet ""
 --
--- >>> runGet getRemainingLazyByteString  (BLC.pack "abc")
+-- >>> runGet remainingLazyByteString  (BLC.pack "abc")
 -- RunGet "abc"
-getRemainingLazyByteString ::
+remainingLazyByteString ::
   Get e L.ByteString
-getRemainingLazyByteString =
+remainingLazyByteString =
   let go =
         do s <- get
            put B.empty
@@ -1256,144 +1256,144 @@ getRemainingLazyByteString =
                fmap (s:) go
   in fmap L.fromChunks go
 
-getPtr ::
+ptr ::
   Storable a =>
   Int
   -> Get () a
-getPtr n =
+ptr n =
   readNWith n peek
-{-# INLINE getPtr #-}
+{-# INLINE ptr #-}
 
 {-# RULES
 
-"getWord8/readN" getWord8 =
+"word8/readN" word8 =
   readN 1 BU.unsafeHead
   
-"getWord16be/readN" getWord16be =
-  readN 2 word16be
+"word16be/readN" word16be =
+  readN 2 word16be'
 
-"getWord16le/readN" getWord16le =
-  readN 2 word16le
+"word16le/readN" word16le =
+  readN 2 word16le'
 
-"getWord32be/readN" getWord32be =
-  readN 4 word32be
+"word32be/readN" word32be =
+  readN 4 word32be'
 
-"getWord32le/readN" getWord32le =
-  readN 4 word32le
+"word32le/readN" word32le =
+  readN 4 word32le'
 
-"getWord64be/readN" getWord64be =
-  readN 8 word64be
+"word64be/readN" word64be =
+  readN 8 word64be'
 
-"getWord64le/readN" getWord64le =
-  readN 8 word64le
+"word64le/readN" word64le =
+  readN 8 word64le'
 
   #-}
 
 -- |
 --
--- >>> runGet getWord8 (BLC.pack "abc")
+-- >>> runGet word8 (BLC.pack "abc")
 -- RunGet 97
 --
--- >>> runGet getWord8 (BLC.pack "123")
+-- >>> runGet word8 (BLC.pack "123")
 -- RunGet 49
-getWord8 ::
+word8 ::
   Get () Word8
-getWord8 =
+word8 =
   readN 1 BU.unsafeHead
-{-# INLINE [0] getWord8 #-}
+{-# INLINE [0] word8 #-}
 
-word16be ::
+word16be' ::
   B.ByteString
   -> Word16
-word16be s =
+word16be' s =
     (fromIntegral (s `BU.unsafeIndex` 0) `shiftlW16` 8) .|.
     fromIntegral (s `BU.unsafeIndex` 1)
-{-# INLINE word16be #-}
+{-# INLINE word16be' #-}
 
 -- |
 --
--- >>> runGet getWord16be (BLC.pack "abc")
+-- >>> runGet word16be (BLC.pack "abc")
 -- RunGet 24930
 --
--- >>> runGet getWord16be (BLC.pack "123")
+-- >>> runGet word16be (BLC.pack "123")
 -- RunGet 12594
-getWord16be ::
+word16be ::
   Get () Word16
-getWord16be =
-  readN 2 word16be
-{-# INLINE [0] getWord16be #-}
+word16be =
+  readN 2 word16be'
+{-# INLINE [0] word16be #-}
 
-word16le ::
+word16le' ::
   B.ByteString
   -> Word16
-word16le s =
+word16le' s =
     (fromIntegral (s `BU.unsafeIndex` 1) `shiftlW16` 8) .|.
     fromIntegral (s `BU.unsafeIndex` 0)
-{-# INLINE word16le #-}
+{-# INLINE word16le' #-}
 
 -- |
 --
--- >>> runGet getWord16le (BLC.pack "abc")
+-- >>> runGet word16le (BLC.pack "abc")
 -- RunGet 25185
 --
--- >>> runGet getWord16le (BLC.pack "123")
+-- >>> runGet word16le (BLC.pack "123")
 -- RunGet 12849
-getWord16le ::
+word16le ::
   Get () Word16
-getWord16le =
-  readN 2 word16le
-{-# INLINE [0] getWord16le #-}
+word16le =
+  readN 2 word16le'
+{-# INLINE [0] word16le #-}
 
-word32be ::
+word32be' ::
   B.ByteString
   -> Word32
-word32be s =
+word32be' s =
     (fromIntegral (s `BU.unsafeIndex` 0) `shiftlW32` 24) .|.
     (fromIntegral (s `BU.unsafeIndex` 1) `shiftlW32` 16) .|.
     (fromIntegral (s `BU.unsafeIndex` 2) `shiftlW32`  8) .|.
     fromIntegral (s `BU.unsafeIndex` 3)
-{-# INLINE word32be #-}
+{-# INLINE word32be' #-}
 
 -- |
 --
--- >>> runGet getWord32be (BLC.pack "abcdef")
+-- >>> runGet word32be (BLC.pack "abcdef")
 -- RunGet 1633837924
 --
--- >>> runGet getWord32be (BLC.pack "123456")
+-- >>> runGet word32be (BLC.pack "123456")
 -- RunGet 825373492
-getWord32be ::
+word32be ::
   Get () Word32
-getWord32be =
-  readN 4 word32be
-{-# INLINE [0] getWord32be #-}
+word32be =
+  readN 4 word32be'
+{-# INLINE [0] word32be #-}
 
-word32le ::
+word32le' ::
   B.ByteString
   -> Word32
-word32le s =
+word32le' s =
     (fromIntegral (s `BU.unsafeIndex` 3) `shiftlW32` 24) .|.
     (fromIntegral (s `BU.unsafeIndex` 2) `shiftlW32` 16) .|.
     (fromIntegral (s `BU.unsafeIndex` 1) `shiftlW32`  8) .|.
     fromIntegral (s `BU.unsafeIndex` 0)
-{-# INLINE word32le #-}
+{-# INLINE word32le' #-}
 
 -- |
 --
--- -- >>> runGet getWord32le (BLC.pack "abcdef")
+-- -- >>> runGet word32le (BLC.pack "abcdef")
 -- RunGet 1684234849
 --
--- >>> runGet getWord32le (BLC.pack "123456")
+-- >>> runGet word32le (BLC.pack "123456")
 -- RunGet 875770417
-getWord32le ::
+word32le ::
   Get () Word32
-getWord32le =
-  readN 4 word32le
-{-# INLINE [0] getWord32le #-}
+word32le =
+  readN 4 word32le'
+{-# INLINE [0] word32le #-}
 
-word64be ::
+word64be' ::
   B.ByteString
   -> Word64
-word64be s =
+word64be' s =
     (fromIntegral (s `BU.unsafeIndex` 0) `shiftlW64` 56) .|.
     (fromIntegral (s `BU.unsafeIndex` 1) `shiftlW64` 48) .|.
     (fromIntegral (s `BU.unsafeIndex` 2) `shiftlW64` 40) .|.
@@ -1402,25 +1402,25 @@ word64be s =
     (fromIntegral (s `BU.unsafeIndex` 5) `shiftlW64` 16) .|.
     (fromIntegral (s `BU.unsafeIndex` 6) `shiftlW64`  8) .|.
     fromIntegral (s `BU.unsafeIndex` 7)
-{-# INLINE word64be #-}
+{-# INLINE word64be' #-}
 
 -- |
 --
--- >>> runGet getWord64be (BLC.pack "abcdefghi")
+-- >>> runGet word64be (BLC.pack "abcdefghi")
 -- RunGet 7017280452245743464
 --
--- >>> runGet getWord64be (BLC.pack "123456789")
+-- >>> runGet word64be (BLC.pack "123456789")
 -- RunGet 3544952156018063160
-getWord64be ::
+word64be ::
   Get () Word64
-getWord64be =
-  readN 8 word64be
-{-# INLINE [0] getWord64be #-}
+word64be =
+  readN 8 word64be'
+{-# INLINE [0] word64be #-}
 
-word64le ::
+word64le' ::
   B.ByteString
   -> Word64
-word64le s =
+word64le' s =
     (fromIntegral (s `BU.unsafeIndex` 7) `shiftlW64` 56) .|.
     (fromIntegral (s `BU.unsafeIndex` 6) `shiftlW64` 48) .|.
     (fromIntegral (s `BU.unsafeIndex` 5) `shiftlW64` 40) .|.
@@ -1429,72 +1429,72 @@ word64le s =
     (fromIntegral (s `BU.unsafeIndex` 2) `shiftlW64` 16) .|.
     (fromIntegral (s `BU.unsafeIndex` 1) `shiftlW64`  8) .|.
     fromIntegral (s `BU.unsafeIndex` 0) 
-{-# INLINE word64le #-}
+{-# INLINE word64le' #-}
 
 -- |
 --
--- >>> runGet getWord64le (BLC.pack "abcdefghi")
+-- >>> runGet word64le (BLC.pack "abcdefghi")
 -- RunGet 7523094288207667809
 --
--- >>> runGet getWord64le (BLC.pack "123456789")
+-- >>> runGet word64le (BLC.pack "123456789")
 -- RunGet 4050765991979987505
-getWord64le ::
+word64le ::
   Get () Word64
-getWord64le =
-  readN 8 word64le
-{-# INLINE [0] getWord64le #-}
+word64le =
+  readN 8 word64le'
+{-# INLINE [0] word64le #-}
 
 -- |
 --
--- >>> runGet getWordhost (BLC.pack "abcdefghi")
+-- >>> runGet wordhost (BLC.pack "abcdefghi")
 -- RunGet 7523094288207667809
 --
--- >>> runGet getWordhost (BLC.pack "123456789")
+-- >>> runGet wordhost (BLC.pack "123456789")
 -- RunGet 4050765991979987505
-getWordhost ::
+wordhost ::
   Get () Word
-getWordhost =
-  getPtr (sizeOf (undefined :: Word))
-{-# INLINE getWordhost #-}
+wordhost =
+  ptr (sizeOf (undefined :: Word))
+{-# INLINE wordhost #-}
 
 -- |
 --
--- >>> runGet getWord16host (BLC.pack "abcde")
+-- >>> runGet word16host (BLC.pack "abcde")
 -- RunGet 25185
 --
--- >>> runGet getWord16host (BLC.pack "12345")
+-- >>> runGet word16host (BLC.pack "12345")
 -- RunGet 12849
-getWord16host ::
+word16host ::
   Get () Word16
-getWord16host =
-  getPtr (sizeOf (undefined :: Word16))
-{-# INLINE getWord16host #-}
+word16host =
+  ptr (sizeOf (undefined :: Word16))
+{-# INLINE word16host #-}
 
 -- |
 --
--- >>> runGet getWord32host (BLC.pack "abcde")
+-- >>> runGet word32host (BLC.pack "abcde")
 -- RunGet 1684234849
 --
--- >>> runGet getWord32host (BLC.pack "12345")
+-- >>> runGet word32host (BLC.pack "12345")
 -- RunGet 875770417
-getWord32host ::
+word32host ::
   Get () Word32
-getWord32host =
-  getPtr (sizeOf (undefined :: Word32))
-{-# INLINE getWord32host #-}
+word32host =
+  ptr (sizeOf (undefined :: Word32))
+{-# INLINE word32host #-}
 
 -- |
 --
--- >>> runGet getWord64host (BLC.pack "abcdeghi")
+-- >>> runGet word64host (BLC.pack "abcdeghi")
 -- RunGet 7595434456733934177
 --
--- >>> runGet getWord64host (BLC.pack "123456789")
+-- >>> runGet word64host (BLC.pack "123456789")
 -- RunGet 4050765991979987505
-getWord64host ::
+word64host ::
   Get () Word64
-getWord64host =
-  getPtr (sizeOf (undefined :: Word64))
-{-# INLINE getWord64host #-}
+word64host =
+  ptr (sizeOf (undefined :: Word64))
+{-# INLINE word64host #-}
 
 ------------------------------------------------------------------------
 -- Unchecked shifts
