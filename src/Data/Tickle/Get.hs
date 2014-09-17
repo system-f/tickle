@@ -70,6 +70,8 @@ module Data.Tickle.Get(
 , _Done
   -- ** Run Get parser
 , runGet
+, (.>>)
+, (<<.)
 , runGetIncremental
   -- * XDecoder data type
 , XDecoder
@@ -1088,6 +1090,24 @@ dropHeadChunk lbs =
       lbs'
     _ ->
       LI.Empty
+
+(.>>) ::
+  Get e a
+  -> L.ByteString
+  -> RunGetResult e a
+(.>>) =
+  runGet 
+
+infixl 2 .>>
+
+(<<.) ::
+  L.ByteString
+  -> Get e a
+  -> RunGetResult e a
+(<<.) b =
+  (`runGet` b)
+
+infixl 2 <<.
 
 runGet ::
   Get e a
