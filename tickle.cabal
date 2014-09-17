@@ -11,15 +11,15 @@ description:
   <<http://i.imgur.com/Ns5hntl.jpg>>
   .
   A port of @Data.Binary@ that tightens up data types and parameterises error messages
-homepage:           https://github.com/tonymorris/tickle
-bug-reports:        https://github.com/tonymorris/tickle/issues
+homepage:           https://github.com/nicta/tickle
+bug-reports:        https://github.com/nicta/tickle/issues
 cabal-version:      >= 1.10
 build-type:         Custom
 extra-source-files: changelog, etc/ATTRIBUTIONS
 
 source-repository   head
   type:             git
-  location:         git@github.com:tonymorris/tickle.git
+  location:         git@github.com:nicta/tickle.git
 
 flag                small_base
   description:      Choose the new, split-up base package.
@@ -43,6 +43,7 @@ library
                     -Wall
 
   default-extensions:
+  
                     NoImplicitPrelude
 
   hs-source-dirs:
