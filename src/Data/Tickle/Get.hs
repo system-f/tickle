@@ -1091,6 +1091,10 @@ dropHeadChunk lbs =
     _ ->
       LI.Empty
 
+-- | An alias for @runGet@.
+--
+-- >>> (getWord8 >>= \c1 -> getWord8 >>= \c2 -> return (c1 + c2)) .>> BLC.pack "abc"
+-- RunGet 195
 (.>>) ::
   Get e a
   -> L.ByteString
@@ -1100,6 +1104,10 @@ dropHeadChunk lbs =
 
 infixl 2 .>>
 
+-- | An alias for @runGet@ with the arguments flipped.
+--
+-- >>> BLC.pack "abc" <<. (getWord8 >>= \c1 -> getWord8 >>= \c2 -> return (c1 + c2))
+-- RunGet 195
 (<<.) ::
   L.ByteString
   -> Get e a
