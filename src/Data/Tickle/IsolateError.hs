@@ -1,5 +1,4 @@
 {-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE Safe #-}
 
 module Data.Tickle.IsolateError(
   -- * Data type

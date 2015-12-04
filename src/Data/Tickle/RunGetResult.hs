@@ -1,5 +1,4 @@
 {-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE Safe #-}
 
 module Data.Tickle.RunGetResult(
   -- * Data type
