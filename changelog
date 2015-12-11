@@ -1,3 +1,7 @@
+0.0.5
+
+* Remove {-# LANGUAGE Safe #-} because validation-0.5.2 removed Safe.
+
 0.0.4
 
 * Fix bug in float64* parsers (Float -> Double)

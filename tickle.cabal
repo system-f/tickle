@@ -1,25 +1,25 @@
 name:               tickle
-version:            0.0.4
+version:            0.0.5
 license:            BSD3
 license-file:       LICENSE
 author:             Tony Morris <ʇǝu˙sıɹɹoɯʇ@ןןǝʞsɐɥ>
 maintainer:         Tony Morris
-copyright:          Copyright (C) 2014 NICTA Limited
+copyright:          Copyright (C) 2014,2015 NICTA Limited
 synopsis:           A port of @Data.Binary@
 category:           Data
 description:
   <<http://i.imgur.com/Ns5hntl.jpg>>
   .
   A port of @Data.Binary@ that tightens up data types and parameterises error messages
-homepage:           https://github.com/nicta/tickle
-bug-reports:        https://github.com/nicta/tickle/issues
+homepage:           https://github.com/NICTA/tickle
+bug-reports:        https://github.com/NICTA/tickle/issues
 cabal-version:      >= 1.10
 build-type:         Custom
 extra-source-files: changelog, etc/ATTRIBUTIONS
 
 source-repository   head
   type:             git
-  location:         git@github.com:nicta/tickle.git
+  location:         git@github.com:NICTA/tickle.git
 
 flag                small_base
   description:      Choose the new, split-up base package.
