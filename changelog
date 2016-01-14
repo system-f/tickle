@@ -1,3 +1,8 @@
+0.0.6
+
+* Change `inlinePerformIO` to `unsafePerformIO`.
+* add `runGetFile`.
+
 0.0.5
 
 * Remove {-# LANGUAGE Safe #-} because validation-0.5.2 removed Safe.
