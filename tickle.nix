@@ -1,13 +1,13 @@
 { mkDerivation, base, bifunctors, bytestring, directory, doctest
-, filepath, lens, mtl, papa, QuickCheck, semigroupoids, semigroups
+, filepath, mtl, papa, QuickCheck, semigroupoids, semigroups
 , stdenv, template-haskell, transformers, validation
 }:
 mkDerivation {
   pname = "tickle";
-  version = "0.0.6";
+  version = "0.0.7";
   src = ./.;
   libraryHaskellDepends = [
-    base bifunctors bytestring filepath lens mtl papa semigroupoids
+    base bifunctors bytestring filepath mtl papa semigroupoids
     semigroups transformers validation
   ];
   testHaskellDepends = [
