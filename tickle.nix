@@ -1,6 +1,6 @@
-{ mkDerivation, base, bifunctors, bytestring, directory, doctest
-, filepath, mtl, papa, QuickCheck, semigroupoids, semigroups
-, stdenv, template-haskell, transformers, validation
+{ mkDerivation, base, bifunctors, bytestring, checkers, filepath
+, lens, mtl, papa, QuickCheck, semigroupoids, semigroups, stdenv
+, tasty, tasty-hunit, tasty-quickcheck, transformers, validation
 }:
 mkDerivation {
   pname = "tickle";
@@ -11,7 +11,7 @@ mkDerivation {
     semigroups transformers validation
   ];
   testHaskellDepends = [
-    base directory doctest filepath QuickCheck template-haskell
+    base checkers lens QuickCheck tasty tasty-hunit tasty-quickcheck
   ];
   homepage = "https://github.com/qfpl/tickle";
   description = "A port of @Data.Binary@";

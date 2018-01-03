@@ -57,28 +57,29 @@ library
                     Data.Tickle.Get
                     Data.Tickle.IsolateError
                     Data.Tickle.RunGetResult
-                    
-test-suite doctests
-  type:
+             
+test-suite          tests
+
+  build-depends:      base >= 4.8 && < 5
+                    , QuickCheck >= 2.9.2 && < 2.11
+                    , checkers >= 0.4.6 && < 0.5
+                    , lens >= 4.15 && < 4.16
+                    , tasty >= 0.11 && < 0.12
+                    , tasty-hunit >= 0.9 && < 0.10
+                    , tasty-quickcheck >= 0.8.4 && < 0.10
+                    , tickle
+
+  type:             
                     exitcode-stdio-1.0
 
-  main-is:
-                    doctests.hs
+  main-is:          
+                    Tests.hs
 
-  default-language:
+  hs-source-dirs:   
+                    test
+
+  default-language: 
                     Haskell2010
 
-  build-depends:
-                    base >= 4.8 && < 5
-                    , doctest >= 0.9.7 && < 0.12
-                    , filepath >= 1.3 && < 1.5
-                    , directory >= 1.1 && < 1.4
-                    , QuickCheck >= 2.0 && < 3.0
-                    , template-haskell >= 2.8 && < 2.12
-
-  ghc-options:
+  ghc-options:       
                     -Wall
-                    -threaded
-
-  hs-source-dirs:
-                    test
