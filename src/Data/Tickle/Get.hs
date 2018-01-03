@@ -133,51 +133,22 @@ module Data.Tickle.Get(
 , uncompletedValue
 ) where
 
-import Control.Applicative(Applicative((<*>), pure), (<$>))
-import Control.Category(Category((.), id))
-import Control.Lens.Iso(Iso', iso)
-import Control.Lens.Lens(lens)
-import Control.Lens.Prism(Prism', prism')
-import Control.Lens.Review((#))
-import Control.Lens.Type(Iso, Lens', Traversal')
-import Control.Monad(Monad((>>=), (>>), return), ap)
-import Data.Bifoldable(Bifoldable(bifoldMap))
-import Data.Bifunctor(Bifunctor(bimap))
-import Data.Bitraversable(Bitraversable(bitraverse))
 import Data.Bits((.|.), (.&.), shiftL, shiftR)
-import Data.Bool(Bool(False, True), (&&), not, otherwise)
 import qualified Data.ByteString as B(ByteString, concat, append, length, splitAt, empty, null, break, drop)
 import qualified Data.ByteString.Lazy as L(ByteString, toChunks, fromChunks, readFile)
 import qualified Data.ByteString.Lazy.Internal as LI(ByteString(Chunk, Empty))
 import qualified Data.ByteString.Unsafe as BU(unsafeDrop, unsafeTake, unsafeHead, unsafeIndex, unsafeUseAsCString)
-import Data.Either(Either(Left, Right), either)
-import Data.Eq(Eq((==)))
-import Data.Foldable(Foldable(foldMap))
-import Data.Function(const)
-import Data.Functor(Functor(fmap))
-import Data.Functor.Apply(Apply((<.>)))
-import Data.Functor.Alt(Alt((<!>)))
 import qualified Data.Functor.Alt as Al(Alt(some, many))
-import Data.Functor.Bind(Bind((>>-)))
-import Data.Int(Int, Int8, Int16, Int32, Int64)
-import Data.List(reverse, foldr)
-import Data.Maybe(Maybe(Nothing, Just), maybe, isJust)
-import Data.Monoid(Monoid(mempty))
-import Data.Ord(Ord((>), (>=), (<), (>=)))
-import Data.Semigroup(Semigroup((<>)))
 import Data.Tickle.IsolateError(IsolateError, _NegativeSize, _IsolateXFail, _UnexpectedConsumed)
 import Data.Tickle.RunGetResult(RunGetResult, _RunGet, _RunGetFail)
-import Data.Traversable(Traversable(traverse))
-import Data.Tuple(uncurry)
 import Foreign(Ptr, castPtr, Storable(peek), sizeOf, alloca, poke)
-import System.FilePath(FilePath)
 import System.IO.Unsafe(unsafePerformIO)
 #if defined(__GLASGOW_HASKELL__) && !defined(__HADDOCK__)
 import GHC.Word(Word, Word8, Word16(W16#), Word32(W32#), Word64(W64#))
 import GHC.Base(uncheckedShiftL#, Int(I#))
 #endif
-import Prelude(Num((-), (+)), Float, Double, Integer, ($!), Show, fromIntegral, undefined, seq)
-import System.IO(IO)
+import Prelude(($!), undefined, seq)
+import Papa hiding (many, (.>>), (<<.))
 
 -- $setup
 -- >>> import Control.Lens.Fold((^?))
@@ -256,7 +227,7 @@ instance Functor (Get e) where
 -- RunGet 195
 instance Apply (Get e) where
   (<.>) =
-    ap
+    (<*>)
 
 apG ::
   Get e (a -> b)
@@ -574,8 +545,8 @@ isolate m (Get k) =
         go 0 (r Nothing)
       go n (XPartial r) =
         do i <- Get (\b q -> let takeLimited t =
-                                   let (j, o) = B.splitAt n t
-                                   in q o (Just j)
+                                   let (j, h) = B.splitAt n t
+                                   in q h (Just j)
                              in if B.null b
                                   then
                                     prompt b (q B.empty Nothing) takeLimited
@@ -983,17 +954,17 @@ toFloat16 word16 =
           then normalised
           else denormalised
       normalised =
-        let exp = (fromIntegral exp16 `shiftR` 10) - 15 + 127
+        let xp = (fromIntegral exp16 `shiftR` 10) - 15 + 127
             frac = fromIntegral frac16
-        in (exp, frac)
+        in (xp, frac)
       denormalised =
-        let exp = (fromIntegral exp16 `shiftR` 10) - 15 + 127 - e
+        let xp = (fromIntegral exp16 `shiftR` 10) - 15 + 127 - e
             (e, frac ) = 
               let step acc x = if x .&. 0x400 == 0
                     then step (acc + 1) (shiftL x 1)
                     else (acc, fromIntegral x .&. 0x3FF)
               in step 0 (shiftL frac16 1) 
-        in (exp, frac)
+        in (xp, frac)
   in toFloat (sign32 .|. word32) 
 {-# INLINE toFloat16 #-}
 

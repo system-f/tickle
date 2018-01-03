@@ -1,15 +1,15 @@
 name:               tickle
-version:            0.0.6
+version:            0.0.7
 license:            BSD3
 license-file:       LICENSE
 author:             Tony Morris <ʇǝu˙sıɹɹoɯʇ@ןןǝʞsɐɥ>
 maintainer:         Tony Morris
 copyright:          Copyright (C) 2014,2015 NICTA Limited
-copyright:          Copyright (c) 2016,2017, Commonwealth Scientific and Industrial Research Organisation (CSIRO)     ABN 41 687 119 230.
+copyright:          Copyright (c) 2016-2018 Commonwealth Scientific and Industrial Research Organisation (CSIRO)     ABN 41 687 119 230.
 synopsis:           A port of @Data.Binary@
 category:           Data
 description:
-  <<http://i.imgur.com/uZnp9ke.jpg>>
+  <<http://i.imgur.com/uZnp9ke.png>>
   .
   A port of @Data.Binary@ that tightens up data types and parameterises error messages
 homepage:           https://github.com/qfpl/tickle
@@ -40,6 +40,8 @@ library
                     , mtl >= 2.1
                     , validation >= 0.3.4 && < 0.6
                     , filepath >= 1.4
+                    , papa >= 0.3 && < 0.4
+
                     
   ghc-options:
                     -Wall

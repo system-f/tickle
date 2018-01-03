@@ -2,7 +2,7 @@
 
 module Data.Tickle.RunGetResult(
   -- * Data type
-  RunGetResult
+  RunGetResult(..)
   -- * Reduction
 , runGetResult
   -- * Prisms
@@ -15,43 +15,11 @@ module Data.Tickle.RunGetResult(
 , runGetResultAccValidationIso
 ) where
 
-import Control.Applicative(Applicative((<*>), pure), (<$>))
-import Control.Category(Category((.), id))
-import Control.Lens.Iso(iso, from)
-import Control.Lens.Prism(prism')
-import Control.Lens.Type(Iso, Prism')
-import Control.Monad(Monad((>>=), return))
-import Data.Bifoldable(Bifoldable(bifoldMap))
-import Data.Bifunctor(Bifunctor(bimap))
-import Data.Bitraversable(Bitraversable(bitraverse))
-import Data.Either(Either(Left, Right))
-import Data.Eq(Eq)
-import Data.Foldable(Foldable(foldMap))
-import Data.Functor(Functor(fmap))
-import Data.Functor.Apply(Apply((<.>)))
-import Data.Functor.Alt(Alt((<!>)))
-import Data.Functor.Bind(Bind((>>-)))
-import Data.Functor.Extend(Extend(extended, duplicated))
-import Data.Int(Int64)
-import Data.Maybe(Maybe(Nothing, Just))
-import Data.Monoid(Monoid(mempty))
-import Data.Ord(Ord)
-import Data.Semigroup(Semigroup((<>)))
-import Data.Traversable(Traversable(traverse))
-import Data.Tuple(uncurry)
 import Data.Validation(Validation, AccValidation, Validation', Validate(_Either, _Validation'))
-import Prelude(Show)
+import Papa
 
 -- $setup
--- >>> import Control.Lens((#))
--- >>> import Control.Lens.Fold((^?))
--- >>> import Control.Lens.Prism(_Right, _Left)
--- >>> import Data.Eq(Eq((==)))
--- >>> import Data.Int(Int)
--- >>> import Data.List((++))
--- >>> import Data.String(String)
 -- >>> import Data.Validation(_Success, _Failure)
--- >>> import Prelude(Num((*), (+), (-)), subtract, even, mod)
 
 data RunGetResult e a = 
   RunGetFail Int64 e
@@ -319,9 +287,6 @@ _RunGetFail =
 
 -- |
 --
--- >>> :t _RunGet # 8
--- _RunGet # 8 :: Num b => RunGetResult e b
---
 -- >>> (_RunGet # 8) ^? _RunGet
 -- Just 8
 --
@@ -386,10 +351,10 @@ runGetResultValidationIso =
 -- >>> runGetResultValidation'Iso . from _Validation' # _Left # (12, "abc")
 -- RunGetFail 12 "abc"
 --
--- >>> from (runGetResultValidation'Iso . from _Validation') # _RunGet # 99 :: Validation (Int64, ()) Int
+-- >>> from (runGetResultValidation'Iso . from _Validation') # _RunGet # 99 :: Validation (Int64, Int) Int
 -- Success 99
 --
--- >>> from (runGetResultValidation'Iso . from _Validation') # _RunGetFail # (12, "abc") :: Validation (Int64, String) ()
+-- >>> from (runGetResultValidation'Iso . from _Validation') # _RunGetFail # (12, "abc") :: Validation (Int64, String) String
 -- Failure (12,"abc")
 runGetResultValidation'Iso ::
   Iso (RunGetResult a b) (RunGetResult b d) (Validation' (Int64, a) b) (Validation' (Int64, b) d)

@@ -2,32 +2,19 @@
 
 module Data.Tickle.IsolateError(
   -- * Data type
-  IsolateError
+  IsolateError(..)
   -- * Reduction
 , isolateError
   -- * Prisms
 , _NegativeSize
 , _IsolateXFail
 , _UnexpectedConsumed
+, _Not_NegativeSize
+, _Not_IsolateXFail
+, _Not_UnexpectedConsumed
 ) where
 
-import Control.Lens.Prism(prism')
-import Control.Lens.Type(Prism')
-import Data.Eq(Eq)
-import Data.Function(const)
-import Data.Functor(Functor(fmap))
-import Data.Functor.Extend(Extend(extended, duplicated))
-import Data.Int(Int)
-import Data.Maybe(Maybe(Just, Nothing))
-import Data.Ord(Ord)
-import Data.Tuple(uncurry)
-import Prelude(Show)
-
--- $setup
--- >>> import Control.Lens((#))
--- >>> import Control.Lens.Fold((^?))
--- >>> import Data.List(reverse)
--- >>> import Prelude(Num((+), (*)))
+import Papa
 
 data IsolateError e =
   NegativeSize
@@ -102,6 +89,222 @@ instance Extend IsolateError where
 
 -- |
 --
+-- >>> IsolateXFail (+10) <.> IsolateXFail 99
+-- IsolateXFail 109
+--
+-- >>> IsolateXFail (+10) <.> NegativeSize
+-- NegativeSize
+--
+-- >>> IsolateXFail (+10) <.> UnexpectedConsumed 3 4
+-- UnexpectedConsumed 3 4
+--
+-- >>> UnexpectedConsumed 3 4 <.> UnexpectedConsumed 5 6
+-- UnexpectedConsumed 3 4
+--
+-- >>> UnexpectedConsumed 3 4 <.> NegativeSize
+-- UnexpectedConsumed 3 4
+--
+-- >>> UnexpectedConsumed 3 4 <.> IsolateXFail (+10)
+-- UnexpectedConsumed 3 4
+--
+-- >>> NegativeSize <.> UnexpectedConsumed 5 6
+-- NegativeSize
+--
+-- >>> NegativeSize <.> NegativeSize
+-- NegativeSize
+--
+-- >>> NegativeSize <.> IsolateXFail (+10)
+-- NegativeSize
+instance Apply IsolateError where
+  IsolateXFail f <.> IsolateXFail x =
+    IsolateXFail (f x)
+  IsolateXFail _ <.> NegativeSize =
+    NegativeSize
+  IsolateXFail _ <.> UnexpectedConsumed x y =
+    UnexpectedConsumed x y
+  NegativeSize <.> _ =
+    NegativeSize
+  UnexpectedConsumed x y <.> _ =
+    UnexpectedConsumed x y
+
+-- |
+--
+-- >>> IsolateXFail (+10) <*> IsolateXFail 99
+-- IsolateXFail 109
+--
+-- >>> IsolateXFail (+10) <*> NegativeSize
+-- NegativeSize
+--
+-- >>> IsolateXFail (+10) <*> UnexpectedConsumed 3 4
+-- UnexpectedConsumed 3 4
+--
+-- >>> UnexpectedConsumed 3 4 <*> UnexpectedConsumed 5 6
+-- UnexpectedConsumed 3 4
+--
+-- >>> UnexpectedConsumed 3 4 <*> NegativeSize
+-- UnexpectedConsumed 3 4
+--
+-- >>> UnexpectedConsumed 3 4 <*> IsolateXFail (+10)
+-- UnexpectedConsumed 3 4
+--
+-- >>> NegativeSize <*> UnexpectedConsumed 5 6
+-- NegativeSize
+--
+-- >>> NegativeSize <*> NegativeSize
+-- NegativeSize
+--
+-- >>> NegativeSize <*> IsolateXFail (+10)
+-- NegativeSize
+--
+-- >>> pure 5 :: IsolateError Int
+-- IsolateXFail 5
+instance Applicative IsolateError where
+  pure =
+    IsolateXFail
+  (<*>) =
+    (<.>)
+
+-- |
+--
+-- >>> IsolateXFail 99 >>- \n -> IsolateXFail (n + 10)
+-- IsolateXFail 109
+--
+-- >>> IsolateXFail 99 >>- \_ -> NegativeSize
+-- NegativeSize
+--
+-- >>> IsolateXFail 99 >>- \_ -> UnexpectedConsumed 3 4
+-- UnexpectedConsumed 3 4
+--
+-- >>> UnexpectedConsumed 3 4 >>- \n -> IsolateXFail (n + 10)
+-- UnexpectedConsumed 3 4
+--
+-- >>> UnexpectedConsumed 3 4 >>- \_ -> NegativeSize
+-- UnexpectedConsumed 3 4
+--
+-- >>> UnexpectedConsumed 3 4 >>- \_ -> UnexpectedConsumed 5 6
+-- UnexpectedConsumed 3 4
+--
+-- >>> NegativeSize >>- \n -> IsolateXFail (n + 10)
+-- NegativeSize
+--
+-- >>> NegativeSize >>- \_ -> NegativeSize
+-- NegativeSize
+--
+-- >>> NegativeSize >>- \_ -> UnexpectedConsumed 3 4
+-- NegativeSize
+instance Bind IsolateError where
+  IsolateXFail x >>- f =
+    f x
+  NegativeSize >>- _ =
+    NegativeSize
+  UnexpectedConsumed x y >>- _ =
+    UnexpectedConsumed x y
+
+-- |
+--
+-- >>> IsolateXFail 99 >>= \n -> IsolateXFail (n + 10)
+-- IsolateXFail 109
+--
+-- >>> IsolateXFail 99 >>= \_ -> NegativeSize
+-- NegativeSize
+--
+-- >>> IsolateXFail 99 >>= \_ -> UnexpectedConsumed 3 4
+-- UnexpectedConsumed 3 4
+--
+-- >>> UnexpectedConsumed 3 4 >>= \n -> IsolateXFail (n + 10)
+-- UnexpectedConsumed 3 4
+--
+-- >>> UnexpectedConsumed 3 4 >>= \_ -> NegativeSize
+-- UnexpectedConsumed 3 4
+--
+-- >>> UnexpectedConsumed 3 4 >>= \_ -> UnexpectedConsumed 5 6
+-- UnexpectedConsumed 3 4
+--
+-- >>> NegativeSize >>= \n -> IsolateXFail (n + 10)
+-- NegativeSize
+--
+-- >>> NegativeSize >>= \_ -> NegativeSize
+-- NegativeSize
+--
+-- >>> NegativeSize >>= \_ -> UnexpectedConsumed 3 4
+-- NegativeSize
+--
+-- >>> return 5 :: IsolateError Int
+-- IsolateXFail 5
+instance Monad IsolateError where
+  (>>=) =
+    (>>-)
+  return =
+    pure
+
+-- |
+--
+-- >>> IsolateXFail 99 <!> IsolateXFail 55
+-- IsolateXFail 99
+--
+-- >>> IsolateXFail 99 <!> NegativeSize
+-- IsolateXFail 99
+--
+-- >>> IsolateXFail 99 <!> UnexpectedConsumed 3 4
+-- IsolateXFail 99
+--
+-- >>> UnexpectedConsumed 3 4 <!> IsolateXFail 55
+-- IsolateXFail 55
+--
+-- >>> UnexpectedConsumed 3 4 <!> NegativeSize
+-- NegativeSize
+--
+-- >>> UnexpectedConsumed 3 4 <!> UnexpectedConsumed 3 4
+-- UnexpectedConsumed 3 4
+--
+-- >>> NegativeSize <!> IsolateXFail 55
+-- IsolateXFail 55
+--
+-- >>> NegativeSize <!> NegativeSize
+-- NegativeSize
+--
+-- >>> NegativeSize <!> UnexpectedConsumed 3 4
+-- UnexpectedConsumed 3 4
+instance Alt IsolateError where
+  IsolateXFail x <!> _ =
+    IsolateXFail x
+  _ <!> y = 
+    y
+
+-- |
+--
+-- >>> IsolateXFail 99 <> IsolateXFail 55
+-- IsolateXFail 99
+--
+-- >>> IsolateXFail 99 <> NegativeSize
+-- IsolateXFail 99
+--
+-- >>> IsolateXFail 99 <> UnexpectedConsumed 3 4
+-- IsolateXFail 99
+--
+-- >>> UnexpectedConsumed 3 4 <> IsolateXFail 55
+-- IsolateXFail 55
+--
+-- >>> UnexpectedConsumed 3 4 <> NegativeSize
+-- NegativeSize
+--
+-- >>> UnexpectedConsumed 3 4 <> UnexpectedConsumed 3 4
+-- UnexpectedConsumed 3 4
+--
+-- >>> NegativeSize <> IsolateXFail 55
+-- IsolateXFail 55
+--
+-- >>> NegativeSize <> NegativeSize
+-- NegativeSize
+--
+-- >>> NegativeSize <> UnexpectedConsumed 3 4
+-- UnexpectedConsumed 3 4
+instance Semigroup (IsolateError e) where
+  (<>) =
+    (<!>)
+
+-- |
+--
 -- >>> _NegativeSize # ()
 -- NegativeSize
 --
@@ -116,11 +319,7 @@ instance Extend IsolateError where
 _NegativeSize ::
   Prism' (IsolateError e) ()
 _NegativeSize =
-  prism'
-    (const NegativeSize)
-    (\x -> case x of
-             NegativeSize -> Just ()
-             _ -> Nothing)
+  _Not_IsolateXFail . _Nothing
 
 -- |
 --
@@ -136,13 +335,9 @@ _NegativeSize =
 -- >>> (_UnexpectedConsumed # (12, 13)) ^? _IsolateXFail
 -- Nothing
 _IsolateXFail ::
-  Prism' (IsolateError e) e
+  Prism (IsolateError e) (IsolateError g) e g
 _IsolateXFail =
-  prism'
-    IsolateXFail
-    (\x -> case x of
-             IsolateXFail e -> Just e
-             _ -> Nothing)
+  _Not_NegativeSize . _Right
 
 -- |
 --
@@ -160,8 +355,88 @@ _IsolateXFail =
 _UnexpectedConsumed ::
   Prism' (IsolateError e) (Int, Int)
 _UnexpectedConsumed =
-  prism'
-    (uncurry UnexpectedConsumed)
+  _Not_IsolateXFail . _Just
+
+-- |
+--
+-- >>> _Not_NegativeSize # Left (8, 9)
+-- UnexpectedConsumed 8 9
+--
+-- >>> _Not_NegativeSize # Right 'a'
+-- IsolateXFail 'a'
+--
+-- >>> (_NegativeSize # ()) ^? _Not_NegativeSize
+-- Nothing
+--
+-- >>> (_IsolateXFail # 8) ^? _Not_NegativeSize
+-- Just (Right 8)
+--
+-- >>> (_UnexpectedConsumed # (12, 13)) ^? _Not_NegativeSize
+-- Just (Left (12,13))
+_Not_NegativeSize ::
+  Prism (IsolateError e) (IsolateError g) (Either (Int, Int) e) (Either (Int, Int) g)
+_Not_NegativeSize =
+  prism
+    (\a -> case a of
+             Right e -> IsolateXFail e
+             Left (l, m) -> UnexpectedConsumed l m)
     (\x -> case x of
-             UnexpectedConsumed l m -> Just (l, m)
-             _ -> Nothing)
+             IsolateXFail e -> Right (Right e)
+             UnexpectedConsumed d e -> Right (Left (d, e))
+             NegativeSize -> Left NegativeSize)
+
+-- |
+--
+-- >>> _Not_IsolateXFail # Nothing
+-- NegativeSize
+--
+-- >>> _Not_IsolateXFail # Just (7, 8)
+-- UnexpectedConsumed 7 8
+--
+-- >>> (_NegativeSize # ()) ^? _Not_IsolateXFail
+-- Just Nothing
+--
+-- >>> (_IsolateXFail # 8) ^? _Not_IsolateXFail
+-- Nothing
+--
+-- >>> (_UnexpectedConsumed # (12, 13)) ^? _Not_IsolateXFail
+-- Just (Just (12,13))
+_Not_IsolateXFail ::
+  Prism' (IsolateError e) (Maybe (Int, Int))
+_Not_IsolateXFail =
+  prism'
+    (\a -> case a of
+             Nothing -> NegativeSize
+             Just (l, m) -> UnexpectedConsumed l m)
+    (\x -> case x of
+             IsolateXFail _ -> Nothing
+             UnexpectedConsumed d e -> Just (Just (d, e))
+             NegativeSize -> Just Nothing)
+
+-- |
+--
+-- >>> _Not_UnexpectedConsumed # Nothing
+-- NegativeSize
+--
+-- >>> _Not_UnexpectedConsumed # Just 99
+-- IsolateXFail 99
+--
+-- >>> (_NegativeSize # ()) ^? _Not_UnexpectedConsumed
+-- Just Nothing
+--
+-- >>> (_IsolateXFail # 8) ^? _Not_UnexpectedConsumed
+-- Just (Just 8)
+--
+-- >>> (_UnexpectedConsumed # (12, 13)) ^? _Not_UnexpectedConsumed
+-- Nothing
+_Not_UnexpectedConsumed ::
+  Prism (IsolateError e) (IsolateError g) (Maybe e) (Maybe g)
+_Not_UnexpectedConsumed =
+  prism
+    (\a -> case a of
+             Nothing -> NegativeSize
+             Just e -> IsolateXFail e)
+    (\x -> case x of
+             IsolateXFail e -> Right (Just e)
+             UnexpectedConsumed d e -> Left (UnexpectedConsumed d e)
+             NegativeSize -> Right Nothing)
