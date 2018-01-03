@@ -1,3 +1,9 @@
+0.0.7
+
+* use nix for build.
+* depend on `papa`.
+* some more prisms on `IsolateError`.
+
 0.0.6
 
 * Change `inlinePerformIO` to `unsafePerformIO`.
