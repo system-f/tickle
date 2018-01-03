@@ -4,7 +4,7 @@
 }:
 mkDerivation {
   pname = "tickle";
-  version = "0.0.7";
+  version = "0.0.9";
   src = ./.;
   libraryHaskellDepends = [
     base bifunctors bytestring filepath mtl papa semigroupoids
