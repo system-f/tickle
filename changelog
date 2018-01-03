@@ -1,3 +1,7 @@
+0.0.9
+
+* fix dependency on `bifunctors`.
+
 0.0.8
 
 * add upper version bounds.
