@@ -1,3 +1,7 @@
+0.0.8
+
+* add upper version bounds.
+
 0.0.7
 
 * use nix for build.
