@@ -11,17 +11,15 @@ module Data.Tickle.RunGetResult(
   -- * Isomorphisms
 , runGetResultEitherIso
 , runGetResultValidationIso
-, runGetResultValidation'Iso
-, runGetResultAccValidationIso
 ) where
 
-import Data.Validation(Validation, AccValidation, Validation', Validate(_Either, _Validation'))
+import Data.Validation(Validation, _Either)
 import Papa
 
 -- $setup
 -- >>> import Data.Validation(_Success, _Failure)
 
-data RunGetResult e a = 
+data RunGetResult e a =
   RunGetFail Int64 e
   | RunGet a
   deriving (Eq, Ord, Show)
@@ -341,40 +339,4 @@ runGetResultEitherIso =
 runGetResultValidationIso ::
   Iso (RunGetResult a b) (RunGetResult b d) (Validation (Int64, a) b) (Validation (Int64, b) d)
 runGetResultValidationIso =
-  from (_Either . from runGetResultEitherIso)
-
--- |
---
--- >>> runGetResultValidation'Iso . from _Validation' # _Right # 99
--- RunGet 99
---
--- >>> runGetResultValidation'Iso . from _Validation' # _Left # (12, "abc")
--- RunGetFail 12 "abc"
---
--- >>> from (runGetResultValidation'Iso . from _Validation') # _RunGet # 99 :: Validation (Int64, Int) Int
--- Success 99
---
--- >>> from (runGetResultValidation'Iso . from _Validation') # _RunGetFail # (12, "abc") :: Validation (Int64, String) String
--- Failure (12,"abc")
-runGetResultValidation'Iso ::
-  Iso (RunGetResult a b) (RunGetResult b d) (Validation' (Int64, a) b) (Validation' (Int64, b) d)
-runGetResultValidation'Iso =
-  from (from _Validation' . from runGetResultEitherIso)
-
--- |
---
--- >>> runGetResultAccValidationIso # _Success # 99
--- RunGet 99
---
--- >>> runGetResultAccValidationIso # _Failure # (12, "abc")
--- RunGetFail 12 "abc"
---
--- >>> from runGetResultAccValidationIso # _RunGet # 99
--- AccSuccess 99
---
--- >>> from runGetResultAccValidationIso # _RunGetFail # (12, "abc")
--- AccFailure (12,"abc")
-runGetResultAccValidationIso ::
-  Iso (RunGetResult a b) (RunGetResult b d) (AccValidation (Int64, a) b) (AccValidation (Int64, b) d)
-runGetResultAccValidationIso =
   from (_Either . from runGetResultEitherIso)

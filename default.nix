@@ -21,6 +21,7 @@ let
     overrides = self: super: import sources.papa self // {
       parsers = pkgs.haskell.lib.dontCheck super.parsers;
       tagsoup-selection = pkgs.haskell.lib.doJailbreak super.tagsoup-selection;
+      validation = super.validation_1;
     };
   };
 
