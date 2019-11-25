@@ -9,7 +9,7 @@ copyright:          Copyright (c) 2016-2018 Commonwealth Scientific and Industri
 synopsis:           A port of @Data.Binary@
 category:           Data
 description:
-  <<http://i.imgur.com/uZnp9ke.png>>
+  <<https://raw.githubusercontent.com/qfpl/assets/master/data61-transparent-bg.png>>
   .
   A port of @Data.Binary@ that tightens up data types and parameterises error messages
 homepage:           https://github.com/qfpl/tickle
