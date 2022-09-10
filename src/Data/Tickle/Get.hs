@@ -144,8 +144,8 @@ import Data.Tickle.RunGetResult(RunGetResult, _RunGet, _RunGetFail)
 import Foreign(Ptr, castPtr, Storable(peek), sizeOf, alloca, poke)
 import System.IO.Unsafe(unsafePerformIO)
 #if defined(__GLASGOW_HASKELL__) && !defined(__HADDOCK__)
-import GHC.Word(Word, Word8, Word16(W16#), Word32(W32#), Word64(W64#))
-import GHC.Base(uncheckedShiftL#, Int(I#))
+import GHC.Word(uncheckedShiftL64#, Word8, Word16(W16#), Word32(W32#), Word64(W64#))
+import GHC.Base(uncheckedShiftLWord16#, uncheckedShiftLWord32#, Int(I#))
 #endif
 import Prelude(($!), undefined, seq)
 import Papa hiding (many, (.>>), (<<.))
@@ -1785,9 +1785,9 @@ shiftlW64 ::
 
 #if defined(__GLASGOW_HASKELL__) && !defined(__HADDOCK__)
 shiftlW16 (W16# w) (I# i) =
-  W16# (w `uncheckedShiftL#`   i)
+  W16# (w `uncheckedShiftLWord16#`   i)
 shiftlW32 (W32# w) (I# i) =
-  W32# (w `uncheckedShiftL#`   i)
+  W32# (w `uncheckedShiftLWord32#`   i)
 
 #if WORD_SIZE_IN_BITS < 64
 shiftlW64 (W64# w) (I# i) =
@@ -1804,7 +1804,7 @@ foreign import ccall unsafe "stg_uncheckedShiftL64"
 
 #else
 shiftlW64 (W64# w) (I# i) =
-  W64# (w `uncheckedShiftL#` i)
+  W64# (w `uncheckedShiftL64#` i)
 #endif
 
 #else
