@@ -30,14 +30,14 @@ library
                     Haskell2010
 
   build-depends:
-                    base >= 4.8 && < 5
-                    , semigroups >= 0.8 && < 0.19
+                    base >= 4.16 && < 5
+                    , semigroups >= 0.8 && < 0.20
                     , semigroupoids >= 4.2 && < 5.4
                     , bifunctors >= 3.0 && < 5.6
-                    , bytestring >= 0.10 && < 0.11
+                    , bytestring >= 0.10 && < 0.12
                     , transformers >= 0.3.0.0 && < 0.6
                     , mtl >= 2.1 && < 2.3
-                    , validation >= 1 && < 1.1
+                    , validation >= 1 && < 1.2
                     , filepath >= 1.4 && < 1.5
                     , papa >= 0.3 && < 0.4
 
